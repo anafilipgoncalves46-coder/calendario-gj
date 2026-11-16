@@ -17,13 +17,13 @@
 
         <form id="adminLoginForm" class="login-form">
           <label class="auth-field" for="adminUser">
-            <span>Utilizador admin</span>
-            <input id="adminUser" type="text" autocomplete="off" placeholder="Digite o nome do administrador" required />
+            <span>E-mail</span>
+            <input id="adminUser" type="email" autocomplete="username" placeholder="Digite o e-mail do administrador" required />
           </label>
 
           <label class="auth-field" for="adminPassword">
             <span>Senha</span>
-            <input id="adminPassword" type="password" autocomplete="off" placeholder="Digite a senha do administrador" required />
+            <input id="adminPassword" type="password" autocomplete="current-password" placeholder="Digite a senha do administrador" required />
           </label>
 
           <button type="submit" class="auth-submit">Entrar</button>
@@ -33,6 +33,9 @@
 
     <div id="appShell" class="app-shell hidden">
       <div class="calendar-app">
+        <div class="calendar-brand">
+          <img src="logo-grupo.png" alt="Logo do grupo" />
+        </div>
         <header class="calendar-header">
           <button id="prevMonth" class="nav-btn" aria-label="Mês anterior">&#8592;</button>
           <h1 id="monthLabel">Mês</h1>
@@ -122,6 +125,7 @@
       </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="script.js"></script>
   </body>
 </html>

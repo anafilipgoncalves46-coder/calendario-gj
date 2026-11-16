@@ -33,9 +33,11 @@ const userTasksList = document.getElementById('userTasksList');
 const upcomingEventsPanel = document.getElementById('upcomingEventsPanel');
 const upcomingEventsList = document.getElementById('upcomingEventsList');
 
-const STORAGE_KEY = 'calendar-compromissos';
 const USER_AUTH_KEY = 'calendar-user-auth';
-const ADMIN_AUTH_KEY = 'calendar-admin-auth';
+const LEGACY_STORAGE_KEY = 'calendar-compromissos';
+const SUPABASE_URL = 'https://sidozbxmbozkrxegwhak.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_KDt2LlyzPS7CuV0CKUm81A_MR_pVNk0';
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const groupOrder = ['logistica', 'musica', 'comunicacao', 'acao-social', 'retiro', 'grupo-reunioes'];
 
@@ -61,8 +63,8 @@ const appointmentTypes = [
 const today = new Date();
 let currentDate = new Date(today.getFullYear(), today.getMonth(), 1);
 let selectedDate = new Date(today);
-let appointments = loadAppointments();
-let currentUser = loadCurrentSession();
+let appointments = [];
+let currentUser = document.body.dataset.page === 'user' ? loadCurrentSession() : null;
 
 function dateKey(date) {
   const year = date.getFullYear();
@@ -94,25 +96,92 @@ function getAppointmentType(typeId) {
   return appointmentTypes.find((type) => type.id === typeId) || appointmentTypes[0];
 }
 
-function loadAppointments() {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? JSON.parse(saved) : [];
-  } catch {
-    return [];
-  }
+function appointmentFromRow(row) {
+  return {
+    id: row.id,
+    date: row.date,
+    title: row.title,
+    typeId: row.type_id,
+    groupId: row.group_id,
+    groupIds: row.group_ids || [],
+    reuniaoNumero: row.reuniao_numero,
+  };
 }
 
-function saveAppointments() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(appointments));
+function appointmentToRow(appointment) {
+  return {
+    date: appointment.date,
+    title: appointment.title,
+    type_id: appointment.typeId,
+    group_id: appointment.groupId,
+    group_ids: appointment.groupIds,
+    reuniao_numero: appointment.reuniaoNumero,
+  };
+}
+
+async function loadAppointments() {
+  const { data, error } = await supabaseClient
+    .from('appointments')
+    .select('*')
+    .order('date')
+    .order('id');
+
+  if (error) throw error;
+  return data.map(appointmentFromRow);
+}
+
+async function saveAppointment(appointment) {
+  const { data, error } = await supabaseClient
+    .from('appointments')
+    .insert(appointmentToRow(appointment))
+    .select()
+    .single();
+
+  if (error) throw error;
+  return appointmentFromRow(data);
+}
+
+async function deleteAppointment(id) {
+  const { error } = await supabaseClient
+    .from('appointments')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw error;
+}
+
+async function migrateLegacyAppointments() {
+  const saved = localStorage.getItem(LEGACY_STORAGE_KEY);
+  if (!saved || appointments.length) return;
+
+  let legacyAppointments;
+  try {
+    legacyAppointments = JSON.parse(saved);
+  } catch {
+    throw new Error('Os compromissos antigos guardados neste navegador não são válidos.');
+  }
+
+  if (!Array.isArray(legacyAppointments) || !legacyAppointments.length) return;
+
+  const rows = legacyAppointments.map((appointment) => ({
+    date: appointment.date,
+    title: appointment.title,
+    type_id: appointment.typeId,
+    group_id: appointment.groupId || null,
+    group_ids: appointment.groupIds || appointment.groups || (appointment.groupId ? [appointment.groupId] : []),
+    reuniao_numero: appointment.reuniaoNumero || null,
+  }));
+  const { data, error } = await supabaseClient.from('appointments').insert(rows).select();
+
+  if (error) throw error;
+  appointments = data.map(appointmentFromRow);
+  localStorage.removeItem(LEGACY_STORAGE_KEY);
+  if (currentUser) renderCalendar();
 }
 
 function loadCurrentSession() {
-  const page = document.body.dataset.page;
-  const key = page === 'admin' ? ADMIN_AUTH_KEY : USER_AUTH_KEY;
-
   try {
-    const raw = localStorage.getItem(key);
+    const raw = localStorage.getItem(USER_AUTH_KEY);
     return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
@@ -120,13 +189,11 @@ function loadCurrentSession() {
 }
 
 function saveCurrentSession(user) {
-  const page = document.body.dataset.page;
-  localStorage.setItem(page === 'admin' ? ADMIN_AUTH_KEY : USER_AUTH_KEY, JSON.stringify(user));
+  localStorage.setItem(USER_AUTH_KEY, JSON.stringify(user));
 }
 
 function clearCurrentSession() {
-  const page = document.body.dataset.page;
-  localStorage.removeItem(page === 'admin' ? ADMIN_AUTH_KEY : USER_AUTH_KEY);
+  localStorage.removeItem(USER_AUTH_KEY);
 }
 
 function getOrderedGroupIds(ids) {
@@ -551,6 +618,38 @@ function applyAuthState() {
   }
 }
 
+async function applyAdminSession(session) {
+  if (!session) {
+    currentUser = null;
+    applyAuthState();
+    return false;
+  }
+
+  const { data: isAdmin, error } = await supabaseClient.rpc('is_calendar_admin');
+  if (error) throw error;
+
+  if (!isAdmin) {
+    currentUser = null;
+    applyAuthState();
+    return false;
+  }
+
+  currentUser = {
+    name: session.user.email,
+    role: 'admin',
+    groups: groups.map((group) => group.id),
+  };
+  applyAuthState();
+  renderCalendar();
+  return true;
+}
+
+function showSupabaseError(error) {
+  console.error('Erro ao comunicar com o Supabase:', error);
+  const detail = error && error.message ? `\nDetalhe: ${error.message}` : '';
+  alert(`Não foi possível carregar ou guardar os compromissos no Supabase. Verifique a configuração e tente novamente.${detail}`);
+}
+
 if (userLoginForm) {
   userLoginForm.addEventListener('submit', (event) => {
     event.preventDefault();
@@ -585,26 +684,24 @@ if (userLoginForm) {
 }
 
 if (adminLoginForm) {
-  adminLoginForm.addEventListener('submit', (event) => {
+  adminLoginForm.addEventListener('submit', async (event) => {
     event.preventDefault();
 
-    const username = adminUserInput.value.trim();
-    const password = adminPasswordInput.value.trim();
+    const email = adminUserInput.value.trim();
+    const password = adminPasswordInput.value;
 
-    if (username !== 'admin' || password !== 'admingjADV') {
-      alert('Credenciais de administrador inválidas.');
-      return;
+    try {
+      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+
+      const isAdmin = await applyAdminSession(data.session);
+      if (!isAdmin) {
+        await supabaseClient.auth.signOut();
+        alert('Esta conta não tem permissão de administrador.');
+      }
+    } catch (error) {
+      showSupabaseError(error);
     }
-
-    currentUser = {
-      name: 'Administrador',
-      role: 'admin',
-      groups: groups.map((group) => group.id),
-    };
-
-    saveCurrentSession(currentUser);
-    applyAuthState();
-    renderCalendar();
   });
 }
 
@@ -669,9 +766,19 @@ document.addEventListener('click', (event) => {
 });
 
 if (logoutBtn) {
-  logoutBtn.addEventListener('click', () => {
+  logoutBtn.addEventListener('click', async () => {
+    if (document.body.dataset.page === 'admin') {
+      try {
+        const { error } = await supabaseClient.auth.signOut();
+        if (error) throw error;
+      } catch (error) {
+        showSupabaseError(error);
+        return;
+      }
+    }
+
     currentUser = null;
-    clearCurrentSession();
+    if (document.body.dataset.page === 'user') clearCurrentSession();
     applyAuthState();
   });
 }
@@ -699,7 +806,7 @@ if (todayBtn) {
 }
 
 if (eventForm) {
-  eventForm.addEventListener('submit', (event) => {
+  eventForm.addEventListener('submit', async (event) => {
     event.preventDefault();
 
     if (!currentUser || currentUser.role !== 'admin') {
@@ -718,18 +825,22 @@ if (eventForm) {
       return;
     }
 
-    appointments.push({
-      id: Date.now(),
+    const appointment = {
       date: dateKey(selectedDate),
       title,
       typeId,
       groupId,
       groupIds: selectedGroups,
       reuniaoNumero,
-    });
+    };
 
-    appointments.sort((a, b) => a.date.localeCompare(b.date) || a.title.localeCompare(b.title));
-    saveAppointments();
+    try {
+      appointments.push(await saveAppointment(appointment));
+      appointments.sort((a, b) => a.date.localeCompare(b.date) || a.title.localeCompare(b.title));
+    } catch (error) {
+      showSupabaseError(error);
+      return;
+    }
 
     eventTitleInput.value = '';
     if (groupTypeSelect) {
@@ -747,43 +858,78 @@ if (eventForm) {
 }
 
 if (eventList) {
-  eventList.addEventListener('click', (event) => {
+  eventList.addEventListener('click', async (event) => {
     const button = event.target.closest('[data-remove-id]');
     if (!button) return;
 
     const idToRemove = Number(button.dataset.removeId);
-    appointments = appointments.filter((appointment) => appointment.id !== idToRemove);
-    saveAppointments();
+    try {
+      await deleteAppointment(idToRemove);
+      appointments = appointments.filter((appointment) => appointment.id !== idToRemove);
+    } catch (error) {
+      showSupabaseError(error);
+      return;
+    }
     renderCalendar();
   });
 }
 
 window.addEventListener('storage', (event) => {
-  if (event.key === STORAGE_KEY || event.key === USER_AUTH_KEY || event.key === ADMIN_AUTH_KEY) {
-    appointments = loadAppointments();
+  if (document.body.dataset.page === 'user' && event.key === USER_AUTH_KEY) {
     currentUser = loadCurrentSession();
     applyAuthState();
     if (currentUser) renderCalendar();
   }
 });
 
-setInterval(() => {
-  const nowAppointments = loadAppointments();
-  const nowSession = loadCurrentSession();
-  const sessionChanged = JSON.stringify(nowSession) !== JSON.stringify(currentUser);
-  const appointmentsChanged = JSON.stringify(nowAppointments) !== JSON.stringify(appointments);
+async function refreshAppointments() {
+  try {
+    appointments = await loadAppointments();
+    renderLoginTaskPreview();
+    if (currentUser) renderCalendar();
+  } catch (error) {
+    showSupabaseError(error);
+  }
+}
 
-  if (sessionChanged || appointmentsChanged) {
-    appointments = nowAppointments;
-    currentUser = nowSession;
+async function initializeApp() {
+  try {
+    appointments = await loadAppointments();
+
+    if (document.body.dataset.page === 'admin') {
+      const { data, error } = await supabaseClient.auth.getSession();
+      if (error) throw error;
+      const isAdmin = await applyAdminSession(data.session);
+      if (isAdmin) await migrateLegacyAppointments();
+
+      supabaseClient.auth.onAuthStateChange((_event, session) => {
+        setTimeout(() => {
+          applyAdminSession(session)
+            .then((isAuthenticatedAdmin) => isAuthenticatedAdmin ? migrateLegacyAppointments() : undefined)
+            .catch(showSupabaseError);
+        }, 0);
+      });
+    }
+
+    supabaseClient
+      .channel('appointments-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, refreshAppointments)
+      .subscribe((status) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.error(`Não foi possível ativar a atualização em tempo real: ${status}`);
+        }
+      });
+
     applyAuthState();
     if (currentUser) renderCalendar();
+  } catch (error) {
+    showSupabaseError(error);
   }
-}, 1200);
+}
 
 if (document.body.dataset.page === 'user') {
   toggleReuniaoField();
 }
 
 applyAuthState();
-if (currentUser) renderCalendar();
+initializeApp();

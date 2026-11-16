@@ -345,6 +345,20 @@ body {
   padding: 24px 20px 18px;
 }
 
+.calendar-brand {
+  display: flex;
+  justify-content: flex-start;
+  margin: -8px 0 8px;
+}
+
+.calendar-brand img {
+  display: block;
+  width: 72px;
+  height: 58px;
+  object-fit: contain;
+  object-position: left center;
+}
+
 .calendar-header {
   display: flex;
   align-items: center;
