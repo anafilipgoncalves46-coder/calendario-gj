@@ -1,0 +1,127 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Calendário - Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body data-page="admin">
+    <div id="authScreen" class="auth-screen">
+      <div class="auth-card">
+        <p class="auth-eyebrow">Acesso administrativo</p>
+        <h2>Entrar como administrador</h2>
+
+        <form id="adminLoginForm" class="login-form">
+          <label class="auth-field" for="adminUser">
+            <span>Utilizador admin</span>
+            <input id="adminUser" type="text" autocomplete="off" placeholder="Digite o nome do administrador" required />
+          </label>
+
+          <label class="auth-field" for="adminPassword">
+            <span>Senha</span>
+            <input id="adminPassword" type="password" autocomplete="off" placeholder="Digite a senha do administrador" required />
+          </label>
+
+          <button type="submit" class="auth-submit">Entrar</button>
+        </form>
+      </div>
+    </div>
+
+    <div id="appShell" class="app-shell hidden">
+      <div class="calendar-app">
+        <header class="calendar-header">
+          <button id="prevMonth" class="nav-btn" aria-label="Mês anterior">&#8592;</button>
+          <h1 id="monthLabel">Mês</h1>
+          <button id="nextMonth" class="nav-btn" aria-label="Próximo mês">&#8594;</button>
+        </header>
+
+        <div class="toolbar">
+          <div class="toolbar-inner">
+            <span id="userBadge" class="user-badge">Administrador</span>
+            <button id="logoutBtn" class="logout-btn">Sair</button>
+            <button id="todayBtn" class="today-btn">Hoje</button>
+          </div>
+        </div>
+
+        <div class="weekdays" aria-label="Dias da semana">
+          <span>Seg</span>
+          <span>Ter</span>
+          <span>Qua</span>
+          <span>Qui</span>
+          <span>Sex</span>
+          <span>Sáb</span>
+          <span>Dom</span>
+        </div>
+
+        <div id="calendarGrid" class="calendar-grid" aria-live="polite"></div>
+
+        <section class="selected-date-panel">
+          <p class="panel-label">Selecionado</p>
+          <h2 id="selectedDateLabel">Data</h2>
+          <p id="dateDescription">Escolha uma data.</p>
+
+          <form id="eventForm" class="event-form">
+            <label class="event-field" for="eventTitle">
+              <span>Compromisso</span>
+              <input id="eventTitle" type="text" maxlength="80" placeholder="Ex.: Reunião de equipe" required />
+            </label>
+
+            <label class="event-field" for="appointmentType">
+              <span>Tipo</span>
+              <select id="appointmentType" name="appointmentType">
+                <option value="reunioes">📅 Reuniões</option>
+                <option value="angariacoes">💰 Arrecadação de Fundos</option>
+                <option value="atividades">🎯 Atividades</option>
+                <option value="aniversarios">🎂 Aniversários</option>
+                <option value="retiro">⛺ Retiro</option>
+                <option value="acao-social">🤝 Ação Social</option>
+                <option value="voluntariado">🙌 Voluntariado</option>
+              </select>
+            </label>
+
+            <label class="event-field" for="groupTypeTrigger">
+              <span>Grupos</span>
+              <div id="groupTypeField" class="multi-select-field">
+                <button type="button" id="groupTypeTrigger" class="multi-select-trigger" aria-expanded="false" aria-haspopup="listbox">
+                  <span class="multi-select-label">Selecionar grupos</span>
+                  <span class="multi-select-arrow">▾</span>
+                </button>
+                <div id="groupTypeMenu" class="multi-select-menu" role="listbox" aria-multiselectable="true">
+                  <div id="groupTypeOptions" class="multi-select-options"></div>
+                </div>
+                <select id="groupType" name="groupType" multiple class="hidden"></select>
+              </div>
+            </label>
+
+            <label id="taskReuniaoField" class="event-field hidden" for="taskReuniaoNumero">
+              <span>Número da reunião</span>
+              <select id="taskReuniaoNumero">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+                <option value="8">8</option>
+              </select>
+            </label>
+
+            <button type="submit" class="add-event-btn">Adicionar</button>
+          </form>
+
+          <div class="event-list-header">
+            <h3>Compromissos</h3>
+          </div>
+          <ul id="eventList" class="event-list" aria-live="polite"></ul>
+        </section>
+      </div>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
