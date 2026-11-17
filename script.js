@@ -497,13 +497,13 @@ function renderUpcomingEvents() {
 
   const items = getUserActivitiesInRange({
     period: 'next-365-days',
-    matches: matchesUserGroup,
+    matches: () => true,
   });
   upcomingEventsPanel.classList.remove('hidden');
   renderUserActivityList(
     upcomingEventsList,
     items,
-    'Ainda não há eventos dos seus grupos nos próximos 365 dias.',
+    'Ainda não há compromissos nos próximos 365 dias.',
     true,
   );
 }
@@ -514,17 +514,19 @@ function openUserActivityList(activityType) {
   const isTaskList = activityType === 'tasks';
   const items = getUserActivitiesInRange({
     period: 'next-365-days',
-    matches: isTaskList ? isUserTask : matchesUserGroup,
+    matches: isTaskList ? isUserTask : () => true,
   });
 
   activitiesDialogTitle.textContent = isTaskList ? 'As minhas tarefas' : 'Próximos eventos';
-  activitiesDialogDescription.textContent = 'Atividades dos seus grupos nos próximos 365 dias.';
+  activitiesDialogDescription.textContent = isTaskList
+    ? 'Atividades dos seus grupos nos próximos 365 dias.'
+    : 'Todos os compromissos nos próximos 365 dias.';
   renderUserActivityList(
     activitiesDialogList,
     items,
     isTaskList
       ? 'Não há tarefas futuras dos seus grupos nos próximos 365 dias.'
-      : 'Não há eventos futuros dos seus grupos nos próximos 365 dias.',
+      : 'Não há compromissos nos próximos 365 dias.',
   );
   activitiesDialog.showModal();
 }
