@@ -37,6 +37,7 @@ const activitiesDialogTitle = document.getElementById('activitiesDialogTitle');
 const activitiesDialogDescription = document.getElementById('activitiesDialogDescription');
 const activitiesDialogList = document.getElementById('activitiesDialogList');
 const closeActivitiesDialogBtn = document.getElementById('closeActivitiesDialog');
+const mobileActivitySummaryQuery = window.matchMedia('(max-width: 620px)');
 
 const USER_AUTH_KEY = 'calendar-user-auth';
 const LEGACY_STORAGE_KEY = 'calendar-compromissos';
@@ -477,12 +478,13 @@ function renderUserTasks() {
     period: 'next-365-days',
     matches: isUserTask,
   });
+  const isMobile = mobileActivitySummaryQuery.matches;
   userTasksPanel.classList.remove('hidden');
   renderUserActivityList(
     userTasksList,
-    items,
+    isMobile ? items.slice(0, 3) : items,
     'Ainda não há tarefas futuras atribuídas aos seus grupos nos próximos 365 dias.',
-    true,
+    !isMobile,
   );
 }
 
@@ -499,12 +501,13 @@ function renderUpcomingEvents() {
     period: 'next-365-days',
     matches: () => true,
   });
+  const isMobile = mobileActivitySummaryQuery.matches;
   upcomingEventsPanel.classList.remove('hidden');
   renderUserActivityList(
     upcomingEventsList,
-    items,
+    isMobile ? items.slice(0, 5) : items,
     'Ainda não há compromissos nos próximos 365 dias.',
-    true,
+    !isMobile,
   );
 }
 
@@ -806,6 +809,12 @@ document.addEventListener('click', (event) => {
 
 document.querySelectorAll('.user-tasks-open').forEach((button) => {
   button.addEventListener('click', () => openUserActivityList(button.dataset.activityList));
+});
+
+mobileActivitySummaryQuery.addEventListener('change', () => {
+  if (!currentUser) return;
+  renderUserTasks();
+  renderUpcomingEvents();
 });
 
 if (closeActivitiesDialogBtn && activitiesDialog) {

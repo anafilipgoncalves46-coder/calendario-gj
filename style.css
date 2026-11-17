@@ -779,8 +779,40 @@ body {
 }
 
 @media (max-width: 620px) {
+  body {
+    display: block;
+    padding: 16px 12px;
+  }
+  .auth-screen,
+  .app-shell,
+  .user-app-shell,
+  .calendar-app {
+    width: 100%;
+    max-width: 100%;
+  }
+  .auth-screen,
+  .calendar-app {
+    border-radius: 20px;
+  }
   .group-checkboxes { grid-template-columns: 1fr; }
   .user-app-shell .calendar-app { padding: 20px 14px 16px; }
+  .user-dashboard-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .user-calendar-column {
+    order: 1;
+    width: 100%;
+  }
+  .user-dashboard-sidebar {
+    position: static;
+    order: -1;
+    width: 100%;
+    gap: 10px;
+  }
+  .user-dashboard-sidebar .user-tasks-panel { flex: 0 0 auto; }
+  .user-dashboard-sidebar .user-tasks-list { overflow: visible; }
   .user-app-shell .user-account-toolbar {
     top: 14px;
     right: 14px;
@@ -802,6 +834,7 @@ body {
   .user-app-shell .calendar-header { gap: 8px; }
   .user-app-shell .calendar-month-actions { gap: 4px; }
   .user-app-shell .calendar-header h1 { font-size: clamp(1.1rem, 4vw, 1.5rem); }
-  .calendar-grid { gap: 6px; }
-  .day { min-height: 62px; font-size: 0.9rem; }
+  .weekdays,
+  .calendar-grid { gap: 4px; }
+  .day { min-height: clamp(52px, 16vw, 62px); font-size: 0.9rem; border-radius: 10px; }
 }
