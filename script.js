@@ -32,6 +32,11 @@ const userTasksPanel = document.getElementById('userTasksPanel');
 const userTasksList = document.getElementById('userTasksList');
 const upcomingEventsPanel = document.getElementById('upcomingEventsPanel');
 const upcomingEventsList = document.getElementById('upcomingEventsList');
+const activitiesDialog = document.getElementById('activitiesDialog');
+const activitiesDialogTitle = document.getElementById('activitiesDialogTitle');
+const activitiesDialogDescription = document.getElementById('activitiesDialogDescription');
+const activitiesDialogList = document.getElementById('activitiesDialogList');
+const closeActivitiesDialogBtn = document.getElementById('closeActivitiesDialog');
 
 const USER_AUTH_KEY = 'calendar-user-auth';
 const LEGACY_STORAGE_KEY = 'calendar-compromissos';
@@ -402,33 +407,41 @@ function renderLoginTaskPreview() {
     .join('');
 }
 
-function renderUserTasks() {
-  if (!userTasksPanel || !userTasksList) return;
+function getActivityDateRange(period) {
+  const startDate = new Date();
+  startDate.setHours(0, 0, 0, 0);
 
-  if (!currentUser || currentUser.role === 'admin') {
-    userTasksPanel.classList.add('hidden');
-    userTasksList.innerHTML = '';
-    return;
+  const endDate = new Date(startDate);
+  if (period === 'next-30-days') {
+    endDate.setDate(endDate.getDate() + 30);
+  } else {
+    endDate.setDate(endDate.getDate() + 365);
   }
 
-  const items = appointments
-    .filter((appointment) => isUserTask(appointment))
+  return { start: dateKey(startDate), end: dateKey(endDate) };
+}
+
+function getUserActivitiesInRange(filter) {
+  const { start, end } = getActivityDateRange(filter.period);
+  return expandRecurringAppointments(appointments)
+    .filter(filter.matches)
+    .filter((appointment) => appointment.date >= start && appointment.date <= end)
     .sort((a, b) => a.date.localeCompare(b.date) || a.title.localeCompare(b.title));
+}
 
+function renderUserActivityList(list, items, emptyMessage, fitAvailableSpace = false) {
   if (!items.length) {
-    userTasksPanel.classList.remove('hidden');
-    userTasksList.innerHTML = '<li class="user-task-empty">Ainda não há tarefas atribuídas aos seus grupos.</li>';
+    list.innerHTML = `<li class="user-task-empty">${emptyMessage}</li>`;
     return;
   }
 
-  userTasksPanel.classList.remove('hidden');
-  userTasksList.innerHTML = items
+  list.innerHTML = items
     .map((appointment) => {
       const type = getAppointmentType(appointment.typeId);
       const date = new Date(`${appointment.date}T00:00:00`);
       return `
         <li class="user-task-item">
-          <span class="user-task-date">${new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short' }).format(date)}</span>
+          <span class="user-task-date">${new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit' }).format(date)}</span>
           <div class="task-content">
             <div class="task-title-row">
               <span class="type-icon" aria-label="${type.label}">${type.emoji}</span>
@@ -440,6 +453,37 @@ function renderUserTasks() {
       `;
     })
     .join('');
+
+  if (fitAvailableSpace) {
+    const listBottom = list.getBoundingClientRect().bottom;
+    const listItems = Array.from(list.children);
+    const firstHiddenItem = listItems.findIndex((item) => item.getBoundingClientRect().bottom > listBottom + 1);
+    if (firstHiddenItem >= 0) {
+      listItems.slice(firstHiddenItem).forEach((item) => item.remove());
+    }
+  }
+}
+
+function renderUserTasks() {
+  if (!userTasksPanel || !userTasksList) return;
+
+  if (!currentUser || currentUser.role === 'admin') {
+    userTasksPanel.classList.add('hidden');
+    userTasksList.innerHTML = '';
+    return;
+  }
+
+  const items = getUserActivitiesInRange({
+    period: 'next-365-days',
+    matches: isUserTask,
+  });
+  userTasksPanel.classList.remove('hidden');
+  renderUserActivityList(
+    userTasksList,
+    items,
+    'Ainda não há tarefas futuras atribuídas aos seus grupos nos próximos 365 dias.',
+    true,
+  );
 }
 
 function renderUpcomingEvents() {
@@ -451,45 +495,38 @@ function renderUpcomingEvents() {
     return;
   }
 
-  const startDate = new Date();
-  startDate.setHours(0, 0, 0, 0);
-
-  const endDate = new Date(startDate);
-  endDate.setDate(endDate.getDate() + 60);
-  endDate.setHours(23, 59, 59, 999);
-
-  const items = expandRecurringAppointments(appointments)
-    .filter((appointment) => {
-      const eventDate = new Date(`${appointment.date}T00:00:00`);
-      return eventDate >= startDate && eventDate <= endDate;
-    })
-    .sort((a, b) => a.date.localeCompare(b.date) || a.title.localeCompare(b.title));
-
-  if (!items.length) {
-    upcomingEventsPanel.classList.remove('hidden');
-    upcomingEventsList.innerHTML = '<li class="user-task-empty">Ainda não há eventos futuros atribuídos nos próximos 60 dias.</li>';
-    return;
-  }
-
+  const items = getUserActivitiesInRange({
+    period: 'next-365-days',
+    matches: matchesUserGroup,
+  });
   upcomingEventsPanel.classList.remove('hidden');
-  upcomingEventsList.innerHTML = items
-    .map((appointment) => {
-      const type = getAppointmentType(appointment.typeId);
-      const date = new Date(`${appointment.date}T00:00:00`);
-      return `
-        <li class="user-task-item">
-          <span class="user-task-date">${new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short' }).format(date)}</span>
-          <div class="task-content">
-            <div class="task-title-row">
-              <span class="type-icon" aria-label="${type.label}">${type.emoji}</span>
-              <strong>${appointment.title}</strong>
-            </div>
-            <small>${type.label} • ${getAppointmentGroupLabel(appointment)}</small>
-          </div>
-        </li>
-      `;
-    })
-    .join('');
+  renderUserActivityList(
+    upcomingEventsList,
+    items,
+    'Ainda não há eventos dos seus grupos nos próximos 365 dias.',
+    true,
+  );
+}
+
+function openUserActivityList(activityType) {
+  if (!activitiesDialog || !activitiesDialogTitle || !activitiesDialogDescription || !activitiesDialogList) return;
+
+  const isTaskList = activityType === 'tasks';
+  const items = getUserActivitiesInRange({
+    period: 'next-365-days',
+    matches: isTaskList ? isUserTask : matchesUserGroup,
+  });
+
+  activitiesDialogTitle.textContent = isTaskList ? 'As minhas tarefas' : 'Próximos eventos';
+  activitiesDialogDescription.textContent = 'Atividades dos seus grupos nos próximos 365 dias.';
+  renderUserActivityList(
+    activitiesDialogList,
+    items,
+    isTaskList
+      ? 'Não há tarefas futuras dos seus grupos nos próximos 365 dias.'
+      : 'Não há eventos futuros dos seus grupos nos próximos 365 dias.',
+  );
+  activitiesDialog.showModal();
 }
 
 function renderEventList() {
@@ -764,6 +801,14 @@ document.addEventListener('click', (event) => {
     }
   });
 });
+
+document.querySelectorAll('.user-tasks-open').forEach((button) => {
+  button.addEventListener('click', () => openUserActivityList(button.dataset.activityList));
+});
+
+if (closeActivitiesDialogBtn && activitiesDialog) {
+  closeActivitiesDialogBtn.addEventListener('click', () => activitiesDialog.close());
+}
 
 if (logoutBtn) {
   logoutBtn.addEventListener('click', async () => {

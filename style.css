@@ -341,6 +341,15 @@ body {
   width: min(92vw, 760px);
 }
 
+.user-app-shell {
+  width: min(96vw, 1180px);
+}
+
+.user-app-shell .calendar-app {
+  position: relative;
+  width: 100%;
+}
+
 .calendar-app {
   padding: 24px 20px 18px;
 }
@@ -353,8 +362,8 @@ body {
 
 .calendar-brand img {
   display: block;
-  width: 72px;
-  height: 58px;
+  width: 100px;
+  height: 80px;
   object-fit: contain;
   object-position: left center;
 }
@@ -372,6 +381,12 @@ body {
   font-size: clamp(1.6rem, 2vw, 2.1rem);
 }
 
+.calendar-month-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .nav-btn,
 .today-btn,
 .logout-btn {
@@ -385,6 +400,17 @@ body {
   display: flex;
   justify-content: flex-end;
   margin-bottom: 16px;
+}
+
+.user-app-shell .user-account-toolbar {
+  position: absolute;
+  top: 24px;
+  right: 20px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .toolbar-inner {
@@ -464,6 +490,146 @@ body {
 
 .day.today.has-event::after { background: #fff; }
 
+.user-dashboard-layout {
+  position: relative;
+}
+
+.user-calendar-column {
+  width: calc(100% - clamp(220px, 25%, 280px) - 16px);
+}
+
+.user-dashboard-sidebar {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  width: clamp(220px, 25%, 280px);
+  min-width: 0;
+  min-height: 0;
+}
+
+.user-dashboard-sidebar .user-tasks-panel {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  margin-bottom: 0;
+  padding: 10px 9px 8px;
+}
+
+.user-dashboard-sidebar .user-tasks-header {
+  margin-bottom: 7px;
+}
+
+.user-tasks-open {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--primary-dark);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.user-tasks-open > span:first-child {
+  min-width: 0;
+}
+
+.user-tasks-title {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.user-tasks-open small {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+
+.user-tasks-open:hover .user-tasks-title {
+  text-decoration: underline;
+}
+
+.user-tasks-open:focus-visible,
+.activities-dialog-close:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+}
+
+.user-tasks-arrow {
+  flex: 0 0 auto;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.user-dashboard-sidebar .user-tasks-list {
+  flex: 1;
+  min-height: 0;
+  gap: 5px;
+  overflow: hidden;
+}
+
+.user-dashboard-sidebar .user-task-item {
+  flex: 0 0 40px;
+  align-items: center;
+  gap: 5px;
+  height: 40px;
+  padding: 4px 6px;
+}
+
+.user-dashboard-sidebar .user-task-date {
+  min-width: 42px;
+  padding: 3px 4px;
+  font-size: 0.62rem;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.user-dashboard-sidebar .task-title-row {
+  min-width: 0;
+  gap: 5px;
+  margin-bottom: 0;
+}
+
+.user-dashboard-sidebar .task-content {
+  min-width: 0;
+}
+
+.user-dashboard-sidebar .type-icon {
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+  font-size: 0.72rem;
+}
+
+.user-dashboard-sidebar .user-task-item strong {
+  min-width: 0;
+  margin-bottom: 0;
+  overflow: hidden;
+  font-size: 0.78rem;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-dashboard-sidebar .user-task-item small {
+  overflow: hidden;
+  font-size: 0.62rem;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .user-tasks-panel {
   margin-bottom: 18px;
   padding: 14px 12px 10px;
@@ -472,9 +638,59 @@ body {
   background: linear-gradient(180deg, #d3d3d3 0%, #c9c9c9 100%);
 }
 
-.user-tasks-header h3 {
-  margin: 0 0 10px;
+.activities-dialog {
+  width: min(600px, calc(100vw - 32px));
+  max-height: 85vh;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: linear-gradient(180deg, #dedede 0%, #d0d0d0 100%);
+  color: var(--text);
+  box-shadow: var(--shadow);
+}
+
+.activities-dialog::backdrop {
+  background: rgba(17, 17, 17, 0.55);
+}
+
+.activities-dialog-content {
+  padding: 20px;
+}
+
+.activities-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.activities-dialog-header h2 {
+  margin: 0;
   color: var(--primary-dark);
+}
+
+.activities-dialog-close {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-soft);
+  color: var(--primary-dark);
+  font: inherit;
+  font-size: 1.4rem;
+  cursor: pointer;
+}
+
+#activitiesDialogDescription {
+  margin: 8px 0 14px;
+  color: var(--muted);
+}
+
+.activities-dialog-list {
+  max-height: 65vh;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .selected-date-panel {
@@ -564,6 +780,28 @@ body {
 
 @media (max-width: 620px) {
   .group-checkboxes { grid-template-columns: 1fr; }
+  .user-app-shell .calendar-app { padding: 20px 14px 16px; }
+  .user-app-shell .user-account-toolbar {
+    top: 14px;
+    right: 14px;
+    gap: 6px;
+  }
+  .user-app-shell .calendar-brand img {
+    width: 64px;
+    height: 52px;
+  }
+  .user-app-shell .user-badge {
+    padding: 6px 8px;
+    font-size: 0.68rem;
+  }
+  .user-app-shell .user-account-toolbar .logout-btn,
+  .user-app-shell .calendar-header .nav-btn,
+  .user-app-shell .calendar-header .today-btn {
+    padding: 7px 8px;
+  }
+  .user-app-shell .calendar-header { gap: 8px; }
+  .user-app-shell .calendar-month-actions { gap: 4px; }
+  .user-app-shell .calendar-header h1 { font-size: clamp(1.1rem, 4vw, 1.5rem); }
   .calendar-grid { gap: 6px; }
   .day { min-height: 62px; font-size: 0.9rem; }
 }

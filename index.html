@@ -57,7 +57,7 @@
       </div>
     </div>
 
-    <div id="appShell" class="app-shell hidden">
+    <div id="appShell" class="app-shell user-app-shell hidden">
       <div class="calendar-app">
         <div class="calendar-brand">
           <img src="logo-grupo.png" alt="Logo do grupo" />
@@ -65,52 +65,81 @@
         <header class="calendar-header">
           <button id="prevMonth" class="nav-btn" aria-label="Mês anterior">&#8592;</button>
           <h1 id="monthLabel">Mês</h1>
-          <button id="nextMonth" class="nav-btn" aria-label="Próximo mês">&#8594;</button>
+          <div class="calendar-month-actions">
+            <button id="todayBtn" class="today-btn">Hoje</button>
+            <button id="nextMonth" class="nav-btn" aria-label="Próximo mês">&#8594;</button>
+          </div>
         </header>
 
-        <div class="toolbar">
-          <div class="toolbar-inner">
-            <span id="userBadge" class="user-badge">Utilizador</span>
-            <button id="logoutBtn" class="logout-btn">Sair</button>
-            <button id="todayBtn" class="today-btn">Hoje</button>
-          </div>
+        <div class="user-account-toolbar">
+          <span id="userBadge" class="user-badge">Utilizador</span>
+          <button id="logoutBtn" class="logout-btn">Sair</button>
         </div>
 
-        <section id="userTasksPanel" class="user-tasks-panel hidden">
-          <div class="user-tasks-header">
-            <h3>As minhas tarefas</h3>
-          </div>
-          <ul id="userTasksList" class="user-tasks-list"></ul>
-        </section>
+        <div class="user-dashboard-layout">
+          <main class="user-calendar-column">
+            <div class="weekdays" aria-label="Dias da semana">
+              <span>Seg</span>
+              <span>Ter</span>
+              <span>Qua</span>
+              <span>Qui</span>
+              <span>Sex</span>
+              <span>Sáb</span>
+              <span>Dom</span>
+            </div>
 
-        <section id="upcomingEventsPanel" class="user-tasks-panel hidden">
-          <div class="user-tasks-header">
-            <h3>Próximos eventos</h3>
-          </div>
-          <ul id="upcomingEventsList" class="user-tasks-list"></ul>
-        </section>
+            <div id="calendarGrid" class="calendar-grid" aria-live="polite"></div>
 
-        <div class="weekdays" aria-label="Dias da semana">
-          <span>Seg</span>
-          <span>Ter</span>
-          <span>Qua</span>
-          <span>Qui</span>
-          <span>Sex</span>
-          <span>Sáb</span>
-          <span>Dom</span>
+            <section class="selected-date-panel">
+              <p class="panel-label">Selecionado</p>
+              <h2 id="selectedDateLabel">Data</h2>
+              <p id="dateDescription">Escolha uma data.</p>
+
+              <ul id="eventList" class="event-list" aria-live="polite"></ul>
+            </section>
+          </main>
+
+          <aside class="user-dashboard-sidebar" aria-label="Resumo">
+            <section id="userTasksPanel" class="user-tasks-panel hidden">
+              <div class="user-tasks-header">
+                <button type="button" class="user-tasks-open" data-activity-list="tasks" aria-haspopup="dialog" aria-controls="activitiesDialog">
+                  <span>
+                    <span class="user-tasks-title">As minhas tarefas</span>
+                    <small>Próximos 365 dias · Ver lista completa</small>
+                  </span>
+                  <span class="user-tasks-arrow" aria-hidden="true">↗</span>
+                </button>
+              </div>
+              <ul id="userTasksList" class="user-tasks-list"></ul>
+            </section>
+
+            <section id="upcomingEventsPanel" class="user-tasks-panel hidden">
+              <div class="user-tasks-header">
+                <button type="button" class="user-tasks-open" data-activity-list="events" aria-haspopup="dialog" aria-controls="activitiesDialog">
+                  <span>
+                    <span class="user-tasks-title">Próximos eventos</span>
+                    <small>Próximos 365 dias · Ver lista completa</small>
+                  </span>
+                  <span class="user-tasks-arrow" aria-hidden="true">↗</span>
+                </button>
+              </div>
+              <ul id="upcomingEventsList" class="user-tasks-list"></ul>
+            </section>
+          </aside>
         </div>
-
-        <div id="calendarGrid" class="calendar-grid" aria-live="polite"></div>
-
-        <section class="selected-date-panel">
-          <p class="panel-label">Selecionado</p>
-          <h2 id="selectedDateLabel">Data</h2>
-          <p id="dateDescription">Escolha uma data.</p>
-
-          <ul id="eventList" class="event-list" aria-live="polite"></ul>
-        </section>
       </div>
     </div>
+
+    <dialog id="activitiesDialog" class="activities-dialog" aria-labelledby="activitiesDialogTitle">
+      <div class="activities-dialog-content">
+        <header class="activities-dialog-header">
+          <h2 id="activitiesDialogTitle"></h2>
+          <button id="closeActivitiesDialog" type="button" class="activities-dialog-close" aria-label="Fechar">×</button>
+        </header>
+        <p id="activitiesDialogDescription"></p>
+        <ul id="activitiesDialogList" class="user-tasks-list activities-dialog-list"></ul>
+      </div>
+    </dialog>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="script.js"></script>
